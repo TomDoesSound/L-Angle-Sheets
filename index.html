@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>L-Angle Sheets</title>
+  <link rel="stylesheet" href="./styles.css?v=0.16" />
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <h1 class="wordmark"><span class="wordmark-gold">L-</span><span>ANGLE</span> <span class="wordmark-muted">SHEETS</span></h1>
+        <p class="brand-kicker">PA ANGLE SHEET GENERATOR</p>
+        <p class="subtitle">Turn a Soundvision report into clean, crew-ready angle sheets without the clutter.</p>
+      </div>
+      <div class="local-pill"><span class="local-dot"></span>Local processing</div>
+    </header>
+
+    <section class="upload-panel" id="uploadPanel">
+      <label class="dropzone" id="dropzone" for="pdfInput">
+        <input id="pdfInput" type="file" accept="application/pdf,.pdf" hidden />
+        <div class="upload-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14.5v3A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5v-3"/></svg>
+        </div>
+        <span class="drop-title">Drop Soundvision report PDF</span>
+        <span class="drop-copy">or click to choose a file</span>
+      </label>
+      <p class="privacy-note">Your Soundvision report is processed locally in this browser and is not uploaded.</p>
+      <p class="status" id="parseStatus" aria-live="polite"></p>
+    </section>
+
+    <section id="workspace" hidden>
+      <div class="project-strip panel">
+        <div class="project-info">
+          <p class="eyebrow">Loaded report</p>
+          <h2 id="projectName">—</h2>
+          <p class="muted" id="projectMeta"></p>
+        </div>
+        <div class="project-actions">
+          <button type="button" class="button secondary" id="selectFlownBtn">Select flown</button>
+          <button type="button" class="button ghost" id="selectAllBtn">Select all</button>
+          <button type="button" class="button ghost" id="clearBtn">Clear</button>
+          <button type="button" class="button ghost" id="newReportBtn">New report</button>
+        </div>
+      </div>
+
+      <div class="workspace-grid">
+        <section class="panel source-panel">
+          <div class="section-heading">
+            <div>
+              <p class="step">01</p>
+              <div>
+                <p class="eyebrow">Choose hangs</p>
+                <h3>Detected sources</h3>
+              </div>
+            </div>
+            <span class="count-badge" id="selectedCount">0 selected</span>
+          </div>
+          <p class="section-help">Select the sources to export. Rename, annotate and optionally colour-code each hang. Soundvision groups are preserved when they exist.</p>
+          <div id="sourceList" class="source-list"></div>
+
+          <div class="selection-order-block">
+            <div class="order-heading">
+              <div>
+                <p class="eyebrow">Selected hangs</p>
+                <span class="control-title">Export order</span>
+              </div>
+              <span class="muted small order-layout-help">Used by both layouts · Every 4 hangs form one multi-hang overview page</span>
+            </div>
+            <div id="orderList" class="order-list"></div>
+          </div>
+        </section>
+
+        <aside class="panel controls-panel">
+          <div class="section-heading compact">
+            <div>
+              <p class="step">02</p>
+              <div>
+                <p class="eyebrow">Document</p>
+                <h3>Export setup</h3>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <span class="control-title">Show details</span>
+            <div class="form-grid two">
+              <label><span class="input-label-line"><span>Show</span><small class="char-counter" data-counter-for="showInput"></small></span><input id="showInput" class="text-input" type="text" maxlength="40" /></label>
+              <label><span class="input-label-line"><span>City</span><small class="char-counter" data-counter-for="cityInput"></small></span><input id="cityInput" class="text-input" type="text" maxlength="24" /></label>
+            </div>
+            <label class="stacked-label"><span class="input-label-line"><span>Project name <em>optional override</em></span><small class="char-counter" data-counter-for="projectOverrideInput"></small></span><input id="projectOverrideInput" class="text-input" type="text" maxlength="32" /></label>
+            <label class="stacked-label"><span class="input-label-line"><span>Revision</span><small class="char-counter" data-counter-for="revisionInput"></small></span><input id="revisionInput" class="text-input" type="text" maxlength="3" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 1" /></label>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="control-group">
+            <span class="control-title">PDF layout</span>
+            <label class="stacked-label"><span>Export format</span>
+              <select id="layoutModeSelect" class="select-input">
+                <option value="detailed" selected>Detailed hang sheets</option>
+                <option value="overview">Multi-hang overview</option>
+                <option value="both">Both</option>
+              </select>
+            </label>
+            <p class="muted small">Detailed sheets are A4 portrait. Overview sheets are A3 landscape for high-density system reference.</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="control-group">
+            <span class="control-title">Fields</span>
+            <div class="field-grid" id="fieldOptions">
+              <label><input type="checkbox" value="angles" checked /><span>Angles</span></label>
+              <label><input type="checkbox" value="panflex" checked /><span>Panflex</span></label>
+              <label><input type="checkbox" value="bumper" checked /><span>Bumper / rigging</span></label>
+              <label><input type="checkbox" value="pickups" checked /><span>Pickup points / holes</span></label>
+              <label><input type="checkbox" value="motorLoads" checked /><span>Motor loads</span></label>
+              <label><input type="checkbox" value="site" checked /><span>Site angle</span></label>
+              <label><input type="checkbox" value="azimuth" checked /><span>Azimuth</span></label>
+              <label><input type="checkbox" value="bottomElevation" checked /><span>Bottom elevation / trim</span></label>
+              <label><input type="checkbox" value="weight" checked /><span>Weight</span></label>
+              <label><input type="checkbox" value="warnings" /><span>Mechanical warning details</span></label>
+            </div>
+            <p class="field-state-notice" id="fieldStateNotice" hidden></p>
+            <p class="muted small">Soundvision DANGER conditions are always flagged on the affected sheet. Enable Mechanical warning details to also print the full Soundvision warning text.</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="control-group">
+            <span class="control-title">PDF style</span>
+            <label class="stacked-label"><span>Theme</span>
+              <select id="pdfStyleSelect" class="select-input">
+                <option value="technical-cyan">Technical Cyan</option>
+                <option value="signal-orange">Signal Orange</option>
+                <option value="production-lime">Production Lime</option>
+                <option value="electric-blue">Electric Blue</option>
+                <option value="monochrome" selected>Monochrome</option>
+              </select>
+            </label>
+            <div class="theme-choice" role="radiogroup" aria-label="PDF appearance">
+              <label><input type="radio" name="pdfAppearance" value="light" /><span>Light</span></label>
+              <label><input type="radio" name="pdfAppearance" value="dark" checked /><span>Dark</span></label>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="control-group branding-block">
+            <span class="control-title">Branding</span>
+            <label class="stacked-label"><span class="input-label-line"><span>Prepared by</span><small class="char-counter" data-counter-for="preparedByInput"></small></span><input id="preparedByInput" class="text-input" type="text" maxlength="32" placeholder="Name or company" autocomplete="name" /></label>
+            <label class="file-label logo-label">Company logo</label>
+            <div class="logo-upload-row">
+              <label class="button secondary logo-button" for="logoInput">Choose logo</label>
+              <input id="logoInput" type="file" accept="image/png,image/jpeg" hidden />
+              <span class="logo-file-name" id="logoFileName">No logo</span>
+            </div>
+            <p class="muted small">PNG or JPG. Transparent PNG recommended for dark PDFs. Logo and Prepared by are remembered on this device.</p>
+            <div id="logoPreviewWrap" class="logo-preview-wrap" hidden>
+              <div class="logo-preview-stage"><img id="logoPreview" alt="Company logo preview" /></div>
+              <button type="button" class="text-button" id="removeLogoBtn">Remove</button>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="generate-block">
+            <div class="generate-heading"><span class="step">03</span><span>Generate</span></div>
+            <button type="button" class="button primary wide" id="exportBtn" disabled>Export L-Angle Sheets PDF</button>
+            <p class="export-notice" id="exportNotice" aria-live="polite"></p>
+            <p class="muted small">Review extracted values against the original Soundvision project before deployment.</p>
+          </div>
+        </aside>
+      </div>
+
+      <section class="panel preview-panel">
+        <div class="section-heading preview-heading">
+          <div>
+            <p class="eyebrow">Live sheet preview</p>
+            <h3 id="previewTitle">Select a hang</h3>
+          </div>
+          <div class="preview-tools">
+            <label class="preview-select-label preview-mode-label"><span>Preview layout</span><select id="previewModeSelect" class="select-input"><option value="overview">Multi-hang</option><option value="detailed" selected>Detailed hang</option></select></label>
+            <label class="preview-select-label"><span id="previewTargetCaption">Preview hang</span><select id="previewSourceSelect" class="select-input"></select></label>
+            <span class="validation" id="validationBadge"></span>
+          </div>
+        </div>
+        <div id="previewContent" class="preview-empty">Choose a source above to inspect the extracted data.</div>
+      </section>
+    </section>
+
+    <section class="support-card">
+      <div class="support-copy">
+        <p class="eyebrow">Support the project</p>
+        <p>L-Angle Sheets is an independent project. If it saves you time on site, you can help support continued development by donating.</p>
+      </div>
+      <a class="button support-button" id="supportCardLink" href="#">Support L-Angle Sheets</a>
+    </section>
+
+    <section class="legal-note">
+      <strong>Use at your own risk.</strong> L-Angle Sheets reformats data extracted from Soundvision reports and may contain parsing or formatting errors. Always verify all angles, Panflex settings, rigging configuration, pickup points, loads and other technical information against the original Soundvision report/project and applicable manufacturer documentation before use. L-Angle Sheets accepts no responsibility for errors, omissions or outcomes resulting from use of generated sheets.
+    </section>
+
+    <footer class="site-footer">
+      <div>Created by Thomas Spencer <span class="footer-dot">·</span> <a class="support-link" id="supportLink" href="#">Support L-Angle Sheets</a></div>
+      <div class="footer-disclaimer">Independent utility. Not affiliated with L-Acoustics. <span class="footer-dot">·</span> <span id="buildVersion">v0.16</span></div>
+    </footer>
+  </main>
+
+  <script type="module" src="./src/app.js?v=0.16"></script>
+</body>
+</html>
